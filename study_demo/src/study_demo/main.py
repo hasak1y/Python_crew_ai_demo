@@ -12,13 +12,21 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 from study_demo.crew import StudyDemoCrew
 
+# 默认读取 knowledge 根目录；以后如果要切换读取位置，只改这里即可。
+DEFAULT_KNOWLEDGE_PATH = "."
+
 
 def analyze_topic(topic: str) -> str:
+    """执行分析流程，并把固定的 knowledge 路径传给 crew。"""
     topic = topic.strip()
+
     if not topic:
         raise ValueError("主题不能为空")
 
-    inputs = {"topic": topic}
+    inputs = {
+        "topic": topic,
+        "local_path": DEFAULT_KNOWLEDGE_PATH,
+    }
     result = StudyDemoCrew().crew().kickoff(inputs=inputs)
     return str(result)
 

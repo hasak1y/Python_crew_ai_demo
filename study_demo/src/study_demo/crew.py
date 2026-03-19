@@ -1,9 +1,17 @@
 from pathlib import Path
 import os
+import sys
 
 from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from dotenv import load_dotenv
+from study_demo.tools.project_tools import list_project_files, read_local_file
+
+# 在 Windows 终端中统一切换为 UTF-8 输出，避免 CrewAI 日志里的 emoji 触发 gbk 编码错误。
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="ignore")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="ignore")
 
 # 在导入阶段先加载 .env，确保显式绑定模型时能读到配置。
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -33,6 +41,7 @@ class StudyDemoCrew:
         return Agent(
             config=self.agents_config["researcher"],
             llm=deepseek_llm,
+            tools=[list_project_files, read_local_file],
             verbose=True,
         )
 

@@ -479,12 +479,12 @@ INDEX_HTML = """<!DOCTYPE html>
       <h1 class="title">Study Demo<br>Workspace</h1>
       <p class="desc">
         把原本只有接口的分析流程包装成一个直接可用的网页工具。
-        输入主题，后端调用 <code>/analyze</code>，再把结果回显到页面。
+        输入主题后，后端会按代码中固定的 knowledge 路径调用 <code>/analyze</code>，再把结果回显到页面。
       </p>
       <ul class="tips">
         <li>更适合技术概念、学习路径、系统设计思路，不适合严格依赖“最新事实”的问题。</li>
         <li>首次请求耗时可能较长，因为会经过规划、研究、审核三个顺序任务。</li>
-        <li>仍然保留 <code>/docs</code>，方便你继续调试 API。</li>
+        <li>本地工具默认只读取 <code>study_demo/knowledge</code>，读取路径在代码里固定，不需要用户手动输入。</li>
       </ul>
     </aside>
 
@@ -518,7 +518,7 @@ INDEX_HTML = """<!DOCTYPE html>
       <section class="workspace">
         <div class="editor">
           <div class="section-head">
-            <h3>输入主题</h3>
+            <h3>输入参数</h3>
             <span class="section-sub">按下 Ctrl + Enter 也可以直接提交</span>
           </div>
 
@@ -608,7 +608,7 @@ INDEX_HTML = """<!DOCTYPE html>
       resultState.textContent = "分析中";
       topicMeta.textContent = "当前主题：" + topic;
       resultOutput.textContent = "正在调用后端分析流程，请稍候...";
-      setStatus("请求已发送。由于当前是顺序 3-agent 流程，可能需要等待 1 到 3 分钟。");
+      setStatus("请求已发送。研究员会按代码中固定的 knowledge 路径调用工具读取目录或文件。");
 
       try {
         const response = await fetch("/analyze", {
