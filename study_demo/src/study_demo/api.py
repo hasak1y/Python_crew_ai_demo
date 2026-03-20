@@ -22,34 +22,21 @@ INDEX_HTML = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Study Demo Workspace</title>
+  <title>Study Demo</title>
   <style>
     :root {
-      --bg-1: #efe7db;
-      --bg-2: #f8f4ed;
-      --panel: rgba(255, 250, 242, 0.82);
-      --panel-strong: rgba(255, 253, 248, 0.96);
-      --text: #1d241f;
-      --muted: #627065;
-      --line: rgba(29, 36, 31, 0.1);
-      --accent: #b95f2f;
-      --accent-2: #7f3a19;
-      --green: #2f6b54;
-      --danger: #a7422a;
-      --code: #181b19;
-      --shadow: 0 30px 80px rgba(88, 61, 34, 0.14);
-      --radius-xl: 30px;
-      --radius-lg: 22px;
-      --radius-md: 16px;
+      --bg: #f5efe6;
+      --panel: #fffaf3;
+      --line: #e6dccb;
+      --text: #1f2a24;
+      --muted: #677368;
+      --accent: #b85b2b;
+      --accent-deep: #7d3918;
+      --ok: #2f6c52;
+      --error: #a63c29;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -57,546 +44,200 @@ INDEX_HTML = """<!DOCTYPE html>
       font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 0% 0%, rgba(185, 95, 47, 0.2), transparent 28%),
-        radial-gradient(circle at 100% 100%, rgba(47, 107, 84, 0.18), transparent 26%),
-        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+        radial-gradient(circle at top left, rgba(184, 91, 43, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(47, 108, 82, 0.16), transparent 25%),
+        linear-gradient(135deg, #f7f1e8, #efe6d7);
     }
 
     .page {
-      width: min(1240px, calc(100vw - 32px));
-      margin: 24px auto 40px;
-      display: grid;
-      grid-template-columns: 340px minmax(0, 1fr);
-      gap: 20px;
-    }
-
-    .panel {
-      border: 1px solid var(--line);
-      background: var(--panel);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
-    }
-
-    .sidebar {
-      padding: 28px;
-      position: sticky;
-      top: 20px;
-      height: fit-content;
-      overflow: hidden;
-    }
-
-    .sidebar::before {
-      content: "";
-      position: absolute;
-      inset: auto -60px -100px auto;
-      width: 220px;
-      height: 220px;
-      border-radius: 999px;
-      background: radial-gradient(circle, rgba(185, 95, 47, 0.24), transparent 70%);
-      pointer-events: none;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(185, 95, 47, 0.11);
-      color: var(--accent-2);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .title {
-      margin: 18px 0 14px;
-      font-size: clamp(38px, 6vw, 58px);
-      line-height: 0.94;
-      letter-spacing: -0.05em;
-    }
-
-    .desc {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.78;
-      font-size: 15px;
-    }
-
-    .tips {
-      margin: 24px 0 0;
-      padding: 0;
-      list-style: none;
-      display: grid;
-      gap: 10px;
-    }
-
-    .tips li {
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(29, 36, 31, 0.07);
-      font-size: 14px;
-      color: #344037;
-      line-height: 1.6;
-    }
-
-    .main {
+      width: min(980px, calc(100vw - 32px));
+      margin: 28px auto;
       display: grid;
       gap: 18px;
     }
 
-    .hero {
-      padding: 26px;
-      overflow: hidden;
-      position: relative;
+    .card {
+      background: rgba(255, 250, 243, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(80, 58, 35, 0.12);
+      backdrop-filter: blur(10px);
     }
 
-    .hero::after {
-      content: "";
-      position: absolute;
-      right: -30px;
-      top: -40px;
-      width: 220px;
-      height: 220px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(47, 107, 84, 0.16), transparent 66%);
-      pointer-events: none;
-    }
-
-    .hero-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .hero h2 {
+    .hero h1 {
       margin: 0 0 10px;
-      font-size: 30px;
+      font-size: clamp(34px, 5vw, 52px);
+      line-height: 0.95;
       letter-spacing: -0.04em;
     }
 
     .hero p {
       margin: 0;
       color: var(--muted);
+      line-height: 1.75;
       font-size: 15px;
-      line-height: 1.76;
-      max-width: 760px;
     }
 
-    .stats {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 20px;
-    }
-
-    .stat {
-      min-width: 150px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(29, 36, 31, 0.08);
-    }
-
-    .stat b {
-      display: block;
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-
-    .stat span {
-      color: var(--muted);
-      font-size: 13px;
+    .badge {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(184, 91, 43, 0.1);
+      color: var(--accent-deep);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .workspace {
       display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-      gap: 18px;
+      gap: 16px;
     }
 
-    .editor,
-    .viewer {
-      padding: 24px;
-      background: var(--panel-strong);
-      border: 1px solid var(--line);
-      border-radius: 26px;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .section-head h3 {
-      margin: 0;
-      font-size: 18px;
-      letter-spacing: -0.02em;
-    }
-
-    .section-sub {
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
       color: var(--muted);
-      font-size: 13px;
     }
 
     textarea {
       width: 100%;
-      min-height: 260px;
+      min-height: 160px;
       resize: vertical;
-      border: 1px solid rgba(29, 36, 31, 0.12);
-      border-radius: 22px;
-      padding: 18px 18px 20px;
+      border: 1px solid #d9cdb9;
+      border-radius: 18px;
+      padding: 16px;
       font: inherit;
       font-size: 15px;
       line-height: 1.75;
+      background: #fffdf9;
       color: var(--text);
-      background: linear-gradient(180deg, #fffefb, #faf4ea);
       outline: none;
-      transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
     }
 
     textarea:focus {
-      border-color: rgba(185, 95, 47, 0.42);
-      box-shadow: 0 0 0 5px rgba(185, 95, 47, 0.08);
-      transform: translateY(-1px);
-    }
-
-    .quick-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .quick-card {
-      border: 1px solid rgba(29, 36, 31, 0.08);
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 14px;
-      text-align: left;
-      cursor: pointer;
-      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-    }
-
-    .quick-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(185, 95, 47, 0.24);
-      background: rgba(255, 249, 240, 0.96);
-    }
-
-    .quick-card b {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 4px;
-      color: var(--text);
-    }
-
-    .quick-card span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.5;
+      border-color: rgba(184, 91, 43, 0.45);
+      box-shadow: 0 0 0 4px rgba(184, 91, 43, 0.08);
     }
 
     .actions {
       display: flex;
-      flex-wrap: wrap;
       gap: 12px;
-      margin-top: 16px;
-      align-items: center;
+      flex-wrap: wrap;
     }
 
     button {
       border: 0;
       border-radius: 999px;
-      padding: 14px 22px;
+      padding: 14px 20px;
       font: inherit;
       font-weight: 700;
-      letter-spacing: 0.01em;
       cursor: pointer;
-      transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease, background 180ms ease;
     }
 
     .primary {
-      color: #fff6f0;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      box-shadow: 0 14px 28px rgba(127, 58, 25, 0.24);
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff8f2;
     }
 
     .secondary {
+      background: #fff;
+      border: 1px solid var(--line);
       color: var(--text);
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(29, 36, 31, 0.08);
     }
 
-    button:hover:not(:disabled) {
-      transform: translateY(-2px);
-    }
-
-    button:disabled {
-      cursor: wait;
-      opacity: 0.72;
-    }
-
-    .status-bar {
-      margin-top: 16px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.74);
-      border: 1px solid rgba(29, 36, 31, 0.07);
+    .status {
+      min-height: 24px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid var(--line);
       color: var(--muted);
       font-size: 14px;
       line-height: 1.6;
     }
 
-    .status-bar.ok {
-      color: var(--green);
-      border-color: rgba(47, 107, 84, 0.18);
-      background: rgba(236, 247, 241, 0.96);
+    .status.ok {
+      color: var(--ok);
+      background: #eef8f2;
+      border-color: #cfe7da;
     }
 
-    .status-bar.error {
-      color: var(--danger);
-      border-color: rgba(167, 66, 42, 0.18);
-      background: rgba(251, 239, 235, 0.96);
+    .status.error {
+      color: var(--error);
+      background: #fbefeb;
+      border-color: #efd1c9;
     }
 
-    .viewer-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-
-    .viewer-meta span {
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .output {
-      min-height: 520px;
+    pre {
       margin: 0;
-      padding: 22px;
-      border-radius: 24px;
-      background:
-        linear-gradient(180deg, rgba(25, 28, 26, 0.98), rgba(18, 21, 19, 0.99));
-      color: #f3efe7;
-      font-size: 14px;
+      min-height: 320px;
+      padding: 20px;
+      border-radius: 18px;
+      background: #171b18;
+      color: #f4efe7;
       line-height: 1.8;
       white-space: pre-wrap;
       word-break: break-word;
       overflow: auto;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      font-size: 14px;
     }
 
-    .footer {
-      padding: 18px 24px 2px;
-      color: var(--muted);
+    .meta {
       font-size: 13px;
-      line-height: 1.7;
-    }
-
-    code {
-      font-family: "Cascadia Code", "Consolas", monospace;
-      font-size: 0.95em;
-    }
-
-    .viewer-toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .tiny-btn {
-      padding: 9px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(29, 36, 31, 0.08);
-      background: rgba(255, 255, 255, 0.72);
-      color: var(--text);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .tiny-btn:hover {
-      background: rgba(255, 249, 240, 0.98);
-    }
-
-    @media (max-width: 1080px) {
-      .page {
-        grid-template-columns: 1fr;
-      }
-
-      .sidebar {
-        position: static;
-      }
-
-      .workspace {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 680px) {
-      .page {
-        width: min(100vw - 18px, 1240px);
-        margin-top: 10px;
-      }
-
-      .panel,
-      .editor,
-      .viewer {
-        border-radius: 22px;
-      }
-
-      .quick-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .title {
-        font-size: 40px;
-      }
-
-      .hero h2 {
-        font-size: 24px;
-      }
+      color: var(--muted);
     }
   </style>
 </head>
 <body>
   <main class="page">
-    <aside class="panel sidebar">
-      <div class="badge">FastAPI + CrewAI</div>
-      <h1 class="title">Study Demo<br>Workspace</h1>
-      <p class="desc">
-        把原本只有接口的分析流程包装成一个直接可用的网页工具。
-        输入主题后，后端会按代码中固定的 knowledge 路径调用 <code>/analyze</code>，再把结果回显到页面。
+    <section class="card hero">
+      <div class="badge">Knowledge Mode</div>
+      <h1>Study Demo</h1>
+      <p>
+        这是一个最小可用的知识库读取页面。你只需要输入主题，后端会按代码里固定的 knowledge 路径调用 CrewAI。
+        当前页面版本：<b>ui-v2-clean</b>。
       </p>
-      <ul class="tips">
-        <li>更适合技术概念、学习路径、系统设计思路，不适合严格依赖“最新事实”的问题。</li>
-        <li>首次请求耗时可能较长，因为会经过规划、研究、审核三个顺序任务。</li>
-        <li>本地工具默认只读取 <code>study_demo/knowledge</code>，读取路径在代码里固定，不需要用户手动输入。</li>
-      </ul>
-    </aside>
+    </section>
 
-    <section class="main">
-      <section class="panel hero">
-        <div class="hero-top">
-          <div>
-            <h2>一个像产品 Demo 的 AI 分析页面</h2>
-            <p>
-              这里不是 Swagger，也不是纯表单页。它更像一个轻量工作台：
-              左边输入主题，右边查看输出，中间保留状态反馈和快捷示例。
-            </p>
-          </div>
-        </div>
-        <div class="stats">
-          <div class="stat">
-            <b>3 Agents</b>
-            <span>规划、研究、审核</span>
-          </div>
-          <div class="stat">
-            <b>DeepSeek</b>
-            <span>显式绑定到 Crew</span>
-          </div>
-          <div class="stat">
-            <b>FastAPI</b>
-            <span>页面与接口共用一套后端</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="workspace">
-        <div class="editor">
-          <div class="section-head">
-            <h3>输入参数</h3>
-            <span class="section-sub">按下 Ctrl + Enter 也可以直接提交</span>
-          </div>
-
-          <textarea id="topicInput" placeholder="例如：CrewAI 的基本工作原理&#10;或者：Python 装饰器的核心概念和常见误区">CrewAI 的基本工作原理</textarea>
-
-          <div class="quick-grid">
-            <button class="quick-card" type="button" data-topic="CrewAI 的基本工作原理">
-              <b>CrewAI 工作原理</b>
-              <span>适合测试当前三角色工作流是否正常。</span>
-            </button>
-            <button class="quick-card" type="button" data-topic="Python 装饰器的核心概念和常见误区">
-              <b>Python 装饰器</b>
-              <span>适合解释型、结构化输出场景。</span>
-            </button>
-            <button class="quick-card" type="button" data-topic="RAG 系统的最小实现方案">
-              <b>RAG 最小方案</b>
-              <span>适合系统设计与 MVP 思路整理。</span>
-            </button>
-            <button class="quick-card" type="button" data-topic="FastAPI 项目结构如何规划">
-              <b>FastAPI 项目结构</b>
-              <span>适合学习路径和工程拆解类问题。</span>
-            </button>
-          </div>
-
-          <div class="actions">
-            <button id="analyzeButton" class="primary" type="button">开始分析</button>
-            <button id="clearButton" class="secondary" type="button">清空结果</button>
-          </div>
-
-          <div id="statusBar" class="status-bar">
-            服务已连接，输入主题后点击“开始分析”。
-          </div>
-        </div>
-
-        <div class="viewer">
-          <div class="viewer-meta">
-            <div>
-              <div class="section-head" style="margin-bottom: 4px;">
-                <h3>结果输出</h3>
-                <span class="section-sub" id="resultState">等待请求</span>
-              </div>
-              <span id="topicMeta">当前没有提交主题</span>
-            </div>
-            <div class="viewer-toolbar">
-              <button id="copyButton" class="tiny-btn" type="button">复制结果</button>
-            </div>
-          </div>
-
-          <pre id="resultOutput" class="output">这里会显示最终分析结果。</pre>
-        </div>
-      </section>
-
-      <div class="footer">
-        页面入口：<code>/</code>，接口文档：<code>/docs</code>，健康检查：<code>/health</code>。
+    <section class="card workspace">
+      <div>
+        <label for="topicInput">输入主题</label>
+        <textarea id="topicInput">请先读取 knowledge 目录中的真实文件内容，再根据读取结果总结其中写了什么，不要泛化解释，不要只做任务拆解。</textarea>
       </div>
+
+      <div class="actions">
+        <button id="runButton" class="primary" type="button">开始分析</button>
+        <button id="clearButton" class="secondary" type="button">清空结果</button>
+      </div>
+
+      <div id="status" class="status">页面已加载，可以直接提交。</div>
+      <div class="meta" id="meta">等待请求</div>
+      <pre id="result">这里会显示分析结果。</pre>
     </section>
   </main>
 
   <script>
     const topicInput = document.getElementById("topicInput");
-    const analyzeButton = document.getElementById("analyzeButton");
+    const runButton = document.getElementById("runButton");
     const clearButton = document.getElementById("clearButton");
-    const copyButton = document.getElementById("copyButton");
-    const statusBar = document.getElementById("statusBar");
-    const resultOutput = document.getElementById("resultOutput");
-    const resultState = document.getElementById("resultState");
-    const topicMeta = document.getElementById("topicMeta");
-    const quickCards = Array.from(document.querySelectorAll(".quick-card"));
+    const statusBox = document.getElementById("status");
+    const metaBox = document.getElementById("meta");
+    const resultBox = document.getElementById("result");
 
     function setStatus(message, type) {
-      statusBar.textContent = message;
-      statusBar.className = "status-bar";
+      statusBox.textContent = message;
+      statusBox.className = "status";
       if (type) {
-        statusBar.classList.add(type);
+        statusBox.classList.add(type);
       }
     }
 
-    async function submitTopic() {
+    async function runAnalyze() {
       const topic = topicInput.value.trim();
       if (!topic) {
         setStatus("请输入主题后再提交。", "error");
@@ -604,76 +245,47 @@ INDEX_HTML = """<!DOCTYPE html>
         return;
       }
 
-      analyzeButton.disabled = true;
-      resultState.textContent = "分析中";
-      topicMeta.textContent = "当前主题：" + topic;
-      resultOutput.textContent = "正在调用后端分析流程，请稍候...";
-      setStatus("请求已发送。研究员会按代码中固定的 knowledge 路径调用工具读取目录或文件。");
+      runButton.disabled = true;
+      metaBox.textContent = "正在请求 /analyze";
+      resultBox.textContent = "正在调用接口，请稍候...";
+      setStatus("请求已发送。", "");
 
       try {
         const response = await fetch("/analyze", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ topic })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.detail || data.error || "请求失败");
+          throw new Error(data.detail || "请求失败");
         }
 
-        resultOutput.textContent = data.result || "接口已返回，但结果为空。";
-        resultState.textContent = "已完成";
-        setStatus("分析完成，可以继续更换主题重新提交。", "ok");
+        metaBox.textContent = "请求成功";
+        resultBox.textContent = data.result || "接口返回为空。";
+        setStatus("分析完成。", "ok");
       } catch (error) {
-        resultOutput.textContent = error.message || "发生未知错误";
-        resultState.textContent = "请求失败";
-        setStatus("请求失败，请查看终端日志。", "error");
+        metaBox.textContent = "请求失败";
+        resultBox.textContent = String(error.message || error);
+        setStatus("请求失败，请检查接口日志或稍后重试。", "error");
       } finally {
-        analyzeButton.disabled = false;
+        runButton.disabled = false;
       }
     }
 
-    analyzeButton.addEventListener("click", submitTopic);
+    runButton.addEventListener("click", runAnalyze);
 
     clearButton.addEventListener("click", function() {
-      topicInput.value = "";
-      resultOutput.textContent = "这里会显示最终分析结果。";
-      resultState.textContent = "等待请求";
-      topicMeta.textContent = "当前没有提交主题";
-      setStatus("已清空输入和输出。");
-      topicInput.focus();
-    });
-
-    copyButton.addEventListener("click", async function() {
-      const text = resultOutput.textContent.trim();
-      if (!text || text === "这里会显示最终分析结果。") {
-        setStatus("当前没有可复制的结果。", "error");
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(text);
-        setStatus("结果已复制到剪贴板。", "ok");
-      } catch (error) {
-        setStatus("复制失败，请手动复制。", "error");
-      }
-    });
-
-    quickCards.forEach(function(card) {
-      card.addEventListener("click", function() {
-        topicInput.value = card.dataset.topic || "";
-        topicInput.focus();
-        setStatus("示例主题已填入，可以直接提交。");
-      });
+      resultBox.textContent = "这里会显示分析结果。";
+      metaBox.textContent = "等待请求";
+      setStatus("已清空结果。", "");
     });
 
     topicInput.addEventListener("keydown", function(event) {
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-        submitTopic();
+        runAnalyze();
       }
     });
   </script>
@@ -689,7 +301,7 @@ def index():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "ui": "ui-v2-clean"}
 
 
 @app.post("/analyze")

@@ -5,6 +5,7 @@ import sys
 from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from dotenv import load_dotenv
+
 from study_demo.tools.project_tools import list_project_files, read_local_file
 
 # 在 Windows 终端中统一切换为 UTF-8 输出，避免 CrewAI 日志里的 emoji 触发 gbk 编码错误。
@@ -26,7 +27,7 @@ deepseek_llm = LLM(
 
 @CrewBase
 class StudyDemoCrew:
-    """3-agent study demo crew"""
+    """Hybrid research demo crew."""
 
     @agent
     def planner(self) -> Agent:
@@ -73,6 +74,8 @@ class StudyDemoCrew:
 
     @crew
     def crew(self) -> Crew:
+        # 当前启用混合模式：保留 planner、researcher、reviewer，
+        # 但只有在题目和本地资料相关时，researcher 才需要使用 knowledge 工具。
         return Crew(
             agents=[
                 self.planner(),
