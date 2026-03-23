@@ -1,0 +1,39 @@
+[
+  {
+    "id": "tool_not_used",
+    "topic": "read project files and summarize them",
+    "expected_quality_flags": ["tool_not_used"],
+    "expected_degraded": true
+  },
+  {
+    "id": "reviewer_fallback",
+    "topic": "Explain RAG in plain language",
+    "expected_quality_flags": ["reviewer_fallback"],
+    "expected_degraded": true
+  },
+  {
+    "id": "planner_failed",
+    "topic": "Analyze this topic",
+    "expected_error_code": "PLANNER_FAILED"
+  },
+  {
+    "id": "researcher_failed",
+    "topic": "Analyze this topic in depth",
+    "expected_error_code": "RESEARCHER_FAILED"
+  },
+  {
+    "id": "reviewer_failed_without_research_output",
+    "topic": "Explain the project structure",
+    "expected_error_code": "INTERNAL_ERROR"
+  },
+  {
+    "id": "unknown_internal_failure",
+    "topic": "Summarize this project",
+    "expected_error_code": "INTERNAL_ERROR"
+  },
+  {
+    "id": "tool_path_not_allowed",
+    "topic": "Read a local file outside knowledge",
+    "expected_error_prefix": "[TOOL_ERROR:tool_path_not_allowed]"
+  }
+]

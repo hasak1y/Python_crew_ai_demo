@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from study_demo.schemas import AnalyzeRequest, AnalyzeResponse, ErrorResponse
-from study_demo.service import analyze_topic_service
+from study_demo.service import ServiceError, analyze_topic_service
 
 # 启动接口时主动加载 .env，避免依赖外部手工注入环境变量。
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -285,7 +285,14 @@ INDEX_HTML = """<!DOCTYPE html>
         }
 
         metaBox.textContent = "请求成功 | request_id: " + data.request_id;
+        if (data.degraded) {
+          metaBox.textContent += " | degraded: true";
+        }
         resultBox.textContent = data.final_answer || "接口返回为空。";
+
+        if (Array.isArray(data.quality_flags) && data.quality_flags.length > 0) {
+          resultBox.textContent += "\\n\\n===== QUALITY FLAGS =====\\n\\n" + JSON.stringify(data.quality_flags, null, 2);
+        }
 
         if (Array.isArray(data.trace_summary) && data.trace_summary.length > 0) {
           resultBox.textContent += "\\n\\n===== TRACE SUMMARY =====\\n\\n" + JSON.stringify(data.trace_summary, null, 2);
@@ -354,6 +361,16 @@ def analyze(req: AnalyzeRequest):
                 status="error",
                 error_code="BAD_REQUEST",
                 message=str(exc),
+            ).model_dump(),
+        )
+    except ServiceError as exc:
+        return JSONResponse(
+            status_code=500,
+            content=ErrorResponse(
+                request_id=request_id,
+                status="error",
+                error_code=exc.error_code,
+                message=exc.message,
             ).model_dump(),
         )
     except Exception:
