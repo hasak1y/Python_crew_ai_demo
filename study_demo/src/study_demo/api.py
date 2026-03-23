@@ -1,20 +1,19 @@
+from __future__ import annotations
+
 from pathlib import Path
+from uuid import uuid4
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, JSONResponse
 
-from study_demo.main import analyze_topic
+from study_demo.schemas import AnalyzeRequest, AnalyzeResponse, ErrorResponse
+from study_demo.service import analyze_topic_service
 
-# 接口启动时主动加载 .env，避免依赖外部手工注入环境变量。
+# 启动接口时主动加载 .env，避免依赖外部手工注入环境变量。
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 app = FastAPI(title="Study Demo API")
-
-
-class TopicRequest(BaseModel):
-    topic: str
 
 
 INDEX_HTML = """<!DOCTYPE html>
@@ -173,6 +172,24 @@ INDEX_HTML = """<!DOCTYPE html>
       border-color: #efd1c9;
     }
 
+    .meta {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .trace-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .trace-toggle input {
+      width: 16px;
+      height: 16px;
+    }
+
     pre {
       margin: 0;
       min-height: 320px;
@@ -186,29 +203,29 @@ INDEX_HTML = """<!DOCTYPE html>
       overflow: auto;
       font-size: 14px;
     }
-
-    .meta {
-      font-size: 13px;
-      color: var(--muted);
-    }
   </style>
 </head>
 <body>
   <main class="page">
     <section class="card hero">
-      <div class="badge">Knowledge Mode</div>
+      <div class="badge">Schema V1</div>
       <h1>Study Demo</h1>
       <p>
-        这是一个最小可用的知识库读取页面。你只需要输入主题，后端会按代码里固定的 knowledge 路径调用 CrewAI。
-        当前页面版本：<b>ui-v2-clean</b>。
+        这是当前项目的规范化接口页面。请求体只描述本次要做什么，响应体只描述产出和状态。
+        如果你勾选步骤摘要，接口会把本次执行的简化 trace 一并返回。
       </p>
     </section>
 
     <section class="card workspace">
       <div>
         <label for="topicInput">输入主题</label>
-        <textarea id="topicInput">请先读取 knowledge 目录中的真实文件内容，再根据读取结果总结其中写了什么，不要泛化解释，不要只做任务拆解。</textarea>
+        <textarea id="topicInput">分析一下 RAG 技术</textarea>
       </div>
+
+      <label class="trace-toggle" for="traceInput">
+        <input id="traceInput" type="checkbox" />
+        返回步骤执行摘要
+      </label>
 
       <div class="actions">
         <button id="runButton" class="primary" type="button">开始分析</button>
@@ -223,6 +240,7 @@ INDEX_HTML = """<!DOCTYPE html>
 
   <script>
     const topicInput = document.getElementById("topicInput");
+    const traceInput = document.getElementById("traceInput");
     const runButton = document.getElementById("runButton");
     const clearButton = document.getElementById("clearButton");
     const statusBox = document.getElementById("status");
@@ -254,17 +272,25 @@ INDEX_HTML = """<!DOCTYPE html>
         const response = await fetch("/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic })
+          body: JSON.stringify({
+            topic,
+            include_trace: traceInput.checked
+          })
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.detail || "请求失败");
+          throw new Error(data.message || data.detail || "请求失败");
         }
 
-        metaBox.textContent = "请求成功";
-        resultBox.textContent = data.result || "接口返回为空。";
+        metaBox.textContent = "请求成功 | request_id: " + data.request_id;
+        resultBox.textContent = data.final_answer || "接口返回为空。";
+
+        if (Array.isArray(data.trace_summary) && data.trace_summary.length > 0) {
+          resultBox.textContent += "\\n\\n===== TRACE SUMMARY =====\\n\\n" + JSON.stringify(data.trace_summary, null, 2);
+        }
+
         setStatus("分析完成。", "ok");
       } catch (error) {
         metaBox.textContent = "请求失败";
@@ -295,25 +321,48 @@ INDEX_HTML = """<!DOCTYPE html>
 
 
 @app.get("/", response_class=HTMLResponse)
-def index():
+def index() -> str:
     return INDEX_HTML
 
 
 @app.get("/health")
-def health():
-    return {"status": "ok", "ui": "ui-v2-clean"}
+def health() -> dict:
+    return {"status": "ok", "ui": "schema-v1"}
 
 
-@app.post("/analyze")
-def analyze(req: TopicRequest):
+@app.post(
+    "/analyze",
+    response_model=AnalyzeResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "请求参数错误"},
+        500: {"model": ErrorResponse, "description": "服务内部错误"},
+    },
+)
+def analyze(req: AnalyzeRequest):
+    request_id = str(uuid4())
     try:
-        result = analyze_topic(req.topic)
+        return analyze_topic_service(
+            topic=req.topic,
+            include_trace=req.include_trace,
+            request_id=request_id,
+        )
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
-    return {
-        "topic": req.topic.strip(),
-        "result": result,
-    }
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                request_id=request_id,
+                status="error",
+                error_code="BAD_REQUEST",
+                message=str(exc),
+            ).model_dump(),
+        )
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content=ErrorResponse(
+                request_id=request_id,
+                status="error",
+                error_code="INTERNAL_ERROR",
+                message="服务内部错误，请稍后重试",
+            ).model_dump(),
+        )

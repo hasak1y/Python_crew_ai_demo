@@ -6,6 +6,7 @@ from crewai import Agent, Crew, LLM, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from dotenv import load_dotenv
 
+from study_demo.logger import init_step_logging
 from study_demo.tools.project_tools import list_project_files, read_local_file
 
 # 在 Windows 终端中统一切换为 UTF-8 输出，避免 CrewAI 日志里的 emoji 触发 gbk 编码错误。
@@ -16,6 +17,9 @@ if hasattr(sys.stderr, "reconfigure"):
 
 # 在导入阶段先加载 .env，确保显式绑定模型时能读到配置。
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
+# 注册步骤日志监听器，把每个 task 的执行信息写到 logs/crew_steps.jsonl。
+init_step_logging()
 
 # 显式创建一个共享的模型实例，供三个 agent 复用。
 deepseek_llm = LLM(
