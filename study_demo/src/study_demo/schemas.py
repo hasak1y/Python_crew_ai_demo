@@ -40,6 +40,17 @@ class StepSummary(BaseModel):
     output_preview: str = Field(description="Short preview of task output or degradation note.")
 
 
+class VersionInfo(BaseModel):
+    workflow_version: str = Field(description="Version of the orchestrated workflow.")
+    prompt_version: str = Field(description="Version of the effective prompt/task design.")
+    agents_config_version: str = Field(description="Version marker for agents.yaml.")
+    tasks_config_version: str = Field(description="Version marker for tasks.yaml.")
+    model_config_version: str = Field(description="Version marker for model binding and config.")
+    tool_version: str = Field(description="Version marker for local tool implementation.")
+    schema_version: str = Field(description="Version marker for API request/response schema.")
+    model_name: str = Field(description="Model name bound at runtime.")
+
+
 class AnalyzeResponse(BaseModel):
     request_id: str = Field(description="Unique identifier for correlating response and logs.")
     status: Literal["success"] = Field(description="Successful request status.")
@@ -56,6 +67,9 @@ class AnalyzeResponse(BaseModel):
         default=None,
         description="Machine-readable flags describing degradation or quality concerns.",
     )
+    version_info: VersionInfo = Field(
+        description="Version markers for tracing which workflow and configuration produced the result.",
+    )
     trace_summary: list[StepSummary] | None = Field(
         default=None,
         description="Optional summarized execution trace for the request.",
@@ -67,3 +81,6 @@ class ErrorResponse(BaseModel):
     status: Literal["error"] = Field(description="Failed request status.")
     error_code: str = Field(description="Stable error code for programmatic handling.")
     message: str = Field(description="Human-readable error message.")
+    version_info: VersionInfo = Field(
+        description="Version markers for tracing which workflow and configuration produced the error.",
+    )

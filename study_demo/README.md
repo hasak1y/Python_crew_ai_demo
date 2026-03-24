@@ -6,95 +6,82 @@
 
 `study_demo` 是一个基于 CrewAI 的多 Agent 学习型分析项目。
 
-当前版本的目标，不是做一个复杂的平台，而是先把一个可运行、可调用、可观察的最小闭环搭起来。项目目前已经具备以下基础能力：
+当前版本的目标不是做复杂平台，而是先把一个可运行、可调用、可观察、可回归的最小闭环搭起来。现在已经具备这些基础能力：
 
-- 用户输入一个主题后，可以通过 CrewAI 完成规划、研究、审核三个阶段的串行分析。
-- 对通用技术问题，可以直接给出结构化说明。
-- 对需要参考本地资料的主题，`researcher` 可以读取 `knowledge` 目录下的真实文件内容。
-- 提供 FastAPI 接口和简单 Web 页面，方便直接发起分析请求。
-- 提供结构化请求体、响应体和错误体，便于后续前后端联调和接口演进。
-- 提供请求级 `request_id` 和步骤日志，方便排查一次调用内部到底发生了什么。
+- 基于 `planner -> researcher -> reviewer` 的 3-Agent 串行工作流
+- `researcher` 可按需读取 `knowledge/` 中的本地资料
+- 提供 FastAPI 接口和内置调试页面
+- 提供结构化请求体、成功响应和错误响应
+- 提供请求级 `request_id`、步骤日志和 `trace_summary`
+- 提供失败策略、降级标记和回退逻辑
+- 提供 failure regression tests，用于回归失败策略行为
+- 提供基础版本化机制，用于追踪 workflow / prompt / tool / schema 的变更来源
 
-从项目阶段来看，`1.0.0` 可以定义为：
+一句话定义当前阶段：
 
-“从单纯验证 CrewAI 能跑，推进到一个具备 API 封装、基础前端和执行链路可观测性的原型版本。”
+这个项目已经从“验证 CrewAI 能跑”推进到“具备 API、日志、失败策略、回归测试和版本追踪能力的原型服务”。
 
 ## 当前版本已完成内容
 
-### 1. 多 Agent 流程
+### 1. 多 Agent 工作流
 
 当前 Crew 由 3 个角色组成：
 
-- `planner`：先拆解问题，明确分析步骤和顺序。
-- `researcher`：根据规划结果进行研究，并在必要时读取本地资料。
-- `reviewer`：检查研究结果是否完整、清晰、贴合原问题，并输出最终版本。
+- `planner`：负责拆解问题和组织分析步骤
+- `researcher`：负责生成核心内容，并在需要时读取本地资料
+- `reviewer`：负责补齐结构、校验质量和整理最终结果
 
-执行方式为串行流程：
+执行方式为：
 
 `planner -> researcher -> reviewer`
 
-这说明项目已经不再是“单次问答”，而是具备了基础的分工式分析结构。
-
 ### 2. 本地知识读取能力
 
-项目内置了本地文件读取工具，`researcher` 在需要时可以查看：
+项目提供了本地工具，`researcher` 可以按需读取：
 
-- `knowledge/` 目录
-- 项目中的本地文件内容
+- `knowledge/` 目录结构
+- `knowledge/` 下的 UTF-8 文本文件
 
-这意味着当前项目已经具备了一个最基础的“本地知识辅助分析”能力，可以支持：
+同时做了基础安全限制：
 
-- 总结已有资料
-- 基于本地文档回答问题
-- 避免完全脱离项目上下文的泛化输出
+- 只允许访问白名单目录
+- 超出目录范围会返回标准化 tool error
+- 文件不存在、编码不对、文件过大等情况会返回明确错误前缀
 
 ### 3. API 化封装
 
-项目已经提供 FastAPI 服务入口，分析能力不再只依赖命令行运行。
+当前接口包括：
 
-当前接口特点：
+- `POST /analyze`
+- `GET /health`
+- `GET /`
 
-- `POST /analyze` 负责处理分析请求
-- `GET /health` 用于健康检查
-- `GET /` 提供简单的浏览器测试页面
+当前接口模型包括：
 
-当前接口已经做了基础规范化：
-
-- 请求体：`AnalyzeRequest`
-- 成功响应：`AnalyzeResponse`
-- 错误响应：`ErrorResponse`
-- 步骤摘要：`StepSummary`
-
-这说明项目已经从“脚本调用”进入“服务调用”阶段。
+- `AnalyzeRequest`
+- `AnalyzeResponse`
+- `ErrorResponse`
+- `StepSummary`
+- `VersionInfo`
 
 ### 4. Service 层拆分
 
-分析逻辑已经从 API 层拆分到独立的 `service.py` 中，当前服务层负责：
+`service.py` 当前负责：
 
-- 组织一次请求的 `request_id`
+- 生成和传递 `request_id`
 - 统计请求耗时
-- 调用核心分析逻辑
-- 按需拼装 `trace_summary`
-
-这一步的价值是让接口层不再直接承担全部职责，后续扩展测试、日志、鉴权、持久化时更容易维护。
+- 协调失败策略和回退逻辑
+- 汇总 `quality_flags`
+- 汇总 `trace_summary`
+- 注入 `version_info`
 
 ### 5. 执行日志与可观测性
 
-项目已经新增 Crew 执行步骤日志能力。
+项目会把执行过程写入：
 
-当前会监听：
+- [`crew_steps.jsonl`](D:/CODE/PythonProject/Python_crew_ai_demo/study_demo/logs/crew_steps.jsonl)
 
-- `TaskStarted`
-- `TaskCompleted`
-- `TaskFailed`
-- `ToolUsageFinished`
-- `ToolUsageError`
-
-日志会写入：
-
-- `logs/crew_steps.jsonl`
-
-日志中记录的信息包括：
+日志当前会记录：
 
 - `request_id`
 - `agent_name`
@@ -105,8 +92,49 @@
 - `step_output_preview`
 - `llm_model`
 - `success`
+- `version_info`
 
-这说明当前版本已经不只是“能跑出结果”，而是初步具备了“能定位问题”的能力。
+### 6. 失败策略
+
+当前失败策略已经按“硬失败 / 软失败 / 质量失败”落地：
+
+- `planner` 失败：直接终止请求
+- `researcher` 核心失败：直接终止请求
+- `reviewer` 失败：如有 `researcher` 结果则回退
+- tool 失败：返回标准化 tool error，并记录质量标记
+- 该用 tool 却没用：返回 `degraded=true`，并写入 `quality_flags`
+- 日志失败：不阻断主流程
+
+### 7. 配置管理与版本化
+
+当前版本已经补上基础版本化机制，目的不是做复杂平台，而是先解决一个工程问题：
+
+“结果变了，但不知道是哪次改动引起的。”
+
+目前已经纳入追踪的版本信息包括：
+
+- `workflow_version`
+- `prompt_version`
+- `agents_config_version`
+- `tasks_config_version`
+- `model_config_version`
+- `tool_version`
+- `schema_version`
+- `model_name`
+
+这些版本信息现在会同时落在三个地方：
+
+- 配置文件：[`agents.yaml`](D:/CODE/PythonProject/Python_crew_ai_demo/study_demo/src/study_demo/config/agents.yaml) 和 [`tasks.yaml`](D:/CODE/PythonProject/Python_crew_ai_demo/study_demo/src/study_demo/config/tasks.yaml) 顶部保留版本标记
+- 服务日志：[`crew_steps.jsonl`](D:/CODE/PythonProject/Python_crew_ai_demo/study_demo/logs/crew_steps.jsonl) 的 task 记录和质量标记都带 `version_info`
+- 接口响应：成功响应、错误响应、`/health` 返回和 `trace_summary` 第一条摘要都会带当前运行版本
+
+这意味着以后一次请求出现异常、质量波动、或行为变化时，至少可以直接追溯：
+
+- 当时跑的是哪一版 workflow
+- 当时对应的是哪一版 prompt / task 配置
+- 当时使用的是哪一版 tool 逻辑
+- 当时暴露的是哪一版 API schema
+- 当时绑定的是哪个模型名
 
 ## 当前目录结构
 
@@ -120,31 +148,38 @@ study_demo/
 │     ├─ crew.py                  # Crew、Agent、Task 组装
 │     ├─ logger.py                # Crew 步骤日志监听与写入
 │     ├─ main.py                  # 命令行入口与 analyze_topic
-│     ├─ schemas.py               # 请求/响应数据模型
-│     ├─ service.py               # API 服务层封装
+│     ├─ schemas.py               # 请求/响应模型
+│     ├─ service.py               # 请求编排、降级和回退逻辑
+│     ├─ versioning.py            # workflow / prompt / tool / schema 版本清单
 │     ├─ config/
 │     │  ├─ agents.yaml           # Agent 配置
 │     │  └─ tasks.yaml            # Task 配置
 │     └─ tools/
-│        └─ project_tools.py      # 本地项目工具
-├─ .env                           # 本地环境变量
+│        └─ project_tools.py      # 本地知识工具
+├─ tests/
+│  ├─ README.md                   # 测试说明
+│  ├─ datasets/
+│  │  └─ failure_strategy_cases.json
+│  ├─ test_api_failure_strategy.py
+│  └─ test_service_failure_strategy.py
+├─ .env
 ├─ pyproject.toml
 └─ README.md
 ```
 
 ## 当前调用链路
 
-一次完整分析的大致链路如下：
+一次完整请求的链路如下：
 
-1. 用户通过浏览器页面、接口请求或命令行输入主题。
-2. API 层接收请求并生成 `request_id`。
-3. Service 层记录起始时间，并设置当前请求上下文。
-4. `StudyDemoCrew` 按顺序执行 `planner`、`researcher`、`reviewer`。
-5. 日志监听器记录每个 task 的执行信息。
-6. Service 层汇总最终答案、总耗时，以及可选的 `trace_summary`。
-7. API 返回结构化 JSON 响应。
+1. 用户通过页面、接口或命令行输入主题
+2. API 生成 `request_id`
+3. Service 初始化请求上下文和版本信息
+4. Crew 按顺序执行 `planner`、`researcher`、`reviewer`
+5. 日志监听器记录 task、tool 和质量标记
+6. Service 根据执行结果决定正常返回、降级返回或失败返回
+7. API 返回结构化 JSON 响应
 
-## 当前版本接口说明
+## 接口说明
 
 ### `POST /analyze`
 
@@ -165,13 +200,25 @@ study_demo/
   "status": "success",
   "final_answer": "这里是最终分析结果",
   "duration_ms": 3210,
+  "degraded": false,
+  "quality_flags": null,
+  "version_info": {
+    "workflow_version": "workflow-v1.1.0",
+    "prompt_version": "prompt-v1.1.0",
+    "agents_config_version": "agents-v1.1.0",
+    "tasks_config_version": "tasks-v1.1.0",
+    "model_config_version": "model-v1.0.0",
+    "tool_version": "tool-v1.1.0",
+    "schema_version": "schema-v1.1.0",
+    "model_name": "deepseek-chat"
+  },
   "trace_summary": [
     {
-      "agent_name": "planner",
-      "task_name": "plan_task",
+      "agent_name": "system",
+      "task_name": "version_info",
       "success": true,
-      "duration_ms": 840,
-      "output_preview": "任务拆解摘要"
+      "duration_ms": 0,
+      "output_preview": "workflow=workflow-v1.1.0, prompt=prompt-v1.1.0, model_config=model-v1.0.0, tool=tool-v1.1.0, schema=schema-v1.1.0, model_name=deepseek-chat"
     }
   ]
 }
@@ -184,23 +231,33 @@ study_demo/
   "request_id": "8a6c2c1a-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "status": "error",
   "error_code": "BAD_REQUEST",
-  "message": "主题不能为空"
+  "message": "主题不能为空",
+  "version_info": {
+    "workflow_version": "workflow-v1.1.0",
+    "prompt_version": "prompt-v1.1.0",
+    "agents_config_version": "agents-v1.1.0",
+    "tasks_config_version": "tasks-v1.1.0",
+    "model_config_version": "model-v1.0.0",
+    "tool_version": "tool-v1.1.0",
+    "schema_version": "schema-v1.1.0",
+    "model_name": "deepseek-chat"
+  }
 }
 ```
 
 ### `GET /health`
 
-用于基础健康检查。
+返回服务健康状态和当前 `version_info`。
 
 ### `GET /`
 
-返回内置测试页面，便于手动输入主题并观察返回结果。
+返回内置调试页面，用于手工输入主题并观察结果。
 
 ## 运行方式
 
 ### 方式一：命令行运行
 
-在项目当前结构下，可直接调用 `main.py` 的逻辑进行分析。
+直接调用 `main.py` 中的分析入口。
 
 ### 方式二：启动 FastAPI
 
@@ -208,37 +265,58 @@ study_demo/
 
 `../start_fastapi.bat`
 
-脚本当前会：
-
-- 切到仓库根目录
-- 释放 `8001` 端口占用
-- 设置 `PYTHONPATH`
-- 使用指定 Conda 环境启动 `uvicorn`
-
 启动后默认访问：
 
 - [http://127.0.0.1:8001](http://127.0.0.1:8001)
+
+## 测试说明
+
+当前测试目录为：
+
+- [`tests`](D:/CODE/PythonProject/Python_crew_ai_demo/study_demo/tests)
+
+后续改动统一遵循这个顺序：
+
+1. 先改 `datasets/` 里的固定样例
+2. 再补测试
+3. 先跑测试，确认新增预期有效
+4. 再改业务实现
+5. 最后全量回归
+
+当前测试重点覆盖：
+
+- failure strategy
+- degraded success
+- reviewer fallback
+- tool error
+- API outward behavior
+- version info exposure
+
+运行命令：
+
+```powershell
+& 'C:\Users\24044\.conda\envs\Python_crew_ai_demo\python.exe' -m unittest discover -s study_demo/tests -p "test_*.py" -v
+```
 
 ## 当前版本解决了什么问题
 
 和最初的 Demo 相比，`1.0.0` 已经解决了几个关键问题：
 
-- 不再只适合本地临时试跑，而是可以通过 API 调用。
-- 不再只有字符串输出，而是有明确的请求和响应结构。
-- 不再难以定位问题，而是能看到任务级日志和步骤摘要。
-- 不再所有逻辑都堆在接口文件里，而是开始形成清晰的分层。
-- 不再只能“知道能跑”，而是能描述“它是怎么跑的”。
+- 不再只适合本地临时试跑，而是可以通过 API 调用
+- 不再只有字符串输出，而是有明确的请求和响应结构
+- 不再难以定位问题，而是能看到任务级日志和步骤摘要
+- 不再难以追溯行为变化，而是能看到这次请求实际运行的是哪一版 workflow / prompt / tool / schema
+- 不再所有逻辑都堆在接口文件里，而是开始形成清晰的分层
+- 不再只知道“能跑”，而是能描述“它为什么这样跑”
 
 ## 当前已知限制
 
 虽然 `1.0.0` 已经形成了功能闭环，但它仍然更接近“可运行原型”，距离“稳定服务”还有几个明显缺口：
 
-- 失败策略还不完整，当前更像“记录错误”，还不是“设计过的降级行为”。
-- 测试体系还没有建立，改 prompt、task、tool 或 schema 后，缺少稳定的回归判断。
-- 评估机制还没有落地，暂时无法系统判断一次结果到底是变好了还是变差了。
-- 配置和工作流还缺少版本意识，出现效果波动时不容易追溯是哪一版配置导致的。
-- 日志虽然已经具备基础 trace 能力，但还没有形成面向长期运行的轮转、归档和治理策略。
-- 生产化能力仍然缺失，例如鉴权、限流、并发控制和部署规范。
+- 评估机制还没有落地，暂时无法系统判断一次结果到底是变好了还是变差了
+- 版本意识已经补上基础形态，但还没有细化到 prompt 片段级、实验组级或发布批次级
+- 日志虽然已经具备基础 trace 能力，但还没有形成面向长期运行的轮转、归档和治理策略
+- 生产化能力仍然缺失，例如鉴权、限流、并发控制和部署规范
 
 ## 下一阶段路线图
 
@@ -246,114 +324,22 @@ study_demo/
 
 建议优先级如下：
 
-### 1. 失败策略补全
-
-这是最优先的工程项。需要把“错误会被记录”升级成“错误已经被设计过”。
-
-重点要明确这些场景的处理方式：
-
-- 模型调用超时怎么办。
-- tool 读取失败怎么办。
-- researcher 没有调工具却直接猜测时，如何识别和约束。
-- reviewer 失败时，是整次失败，还是回退到 researcher 的结果。
-
-当前更稳的原则可以是：
-
-- `planner` 失败：整次请求失败。
-- `researcher` 的 tool 失败：允许降级为仅基于 `topic` 分析，但要在 `trace_summary` 中明确标记。
-- `reviewer` 失败：优先回退 `researcher` 的结果，而不是直接返回 500。
-
-### 2. 测试体系建设
-
-当前项目已经不适合只靠手工点页面验证，需要建立最基础的测试分层：
-
-- 单元测试：覆盖 `tool`、`schema`、`service` 中的独立逻辑。
-- 集成测试：覆盖从 API 到 Crew 主链路的关键流程。
-- 回归测试：针对固定输入，检查输出是否出现明显漂移。
-
-这个项目尤其适合做“黄金样例测试”：
-
-- 准备 5 到 10 个固定 `topic`
-- 保存一版认可的参考输出
-- 每次改动 prompt、task、tool、schema 后都跑一遍
-
-这里测试的重点不只是“有没有报错”，还包括“结果质量有没有悄悄变差”。
-
-### 3. 配置管理和版本化
-
-当 prompt、task、agent、tool、schema 越来越多之后，最大的风险之一就是：
-
-“结果变了，但不知道是哪次改动引起的。”
-
-建议尽快引入基础版本意识，至少覆盖：
-
-- `agents.yaml` / `tasks.yaml` 的工作流版本
-- 模型配置版本
-- tool 逻辑版本
-- API schema 版本
-
-最简单的做法不是上复杂平台，而是：
-
-- 在配置文件里保留明确版本标识
-- 在日志中输出 `workflow_version`、`prompt_version`
-- 在响应 trace 或服务日志里记录当前运行版本
-
-这样当一次请求结果异常时，至少可以追到它实际跑的是哪一套配置。
-
-### 4. 评估机制
-
-测试体系解决的是“有没有坏”，评估机制解决的是“是不是变好”。
-
-对多 Agent 服务来说，评估机制非常关键，因为很多问题不会表现为 crash，而是表现为：
-
-- 回答偏题
-- 该用工具时没用工具
-- 结构不完整
-- 幻觉增加
-- 耗时变差
-
-建议先从轻量评估开始，每次请求记录几个基本指标，例如：
-
-- 是否真正回答了 `topic`
-- 是否使用了该使用的工具
-- 最终答案是否结构完整
-- 是否存在明显幻觉或乱猜
-- 耗时是否可接受
-
-前期不需要复杂平台，用 CSV 或 JSONL 保存人工评估结果就足够。
-
-### 5. 日志治理细化
-
-当前项目已经有 task 级别 trace，这是一个很好的起点。下一步建议补齐：
-
-- 日志轮转
-- 自动清理
-- 错误级别划分
-- 更明确的降级和回退标记
-
-这样日志才能真正从“调试辅助”升级为“运行治理工具”。
-
-### 6. 生产化能力补齐
-
-当稳定性、测试、版本和评估有了基础之后，再继续推进生产能力会更合适，包括：
-
-- 鉴权
-- 限流
-- 并发任务控制
-- 部署规范
-- 环境配置标准化
-
-这些不是当前版本最优先的事，但会是后续从原型走向可交付服务的必要条件。
+1. 继续补评估机制，把“测试通过”和“质量变好”区分开
+2. 继续扩展黄金样例测试，把真实 topic 输出纳入回归
+3. 继续细化版本标记，把版本号收敛到 prompt 片段和实验批次
+4. 完善日志治理，包括轮转、清理和错误级别
+5. 再考虑鉴权、限流、并发控制和部署规范
 
 ## 阶段总结
 
-`study_demo v1.0.0` 的意义，不在于功能很多，而在于已经完成了一个清晰的第一阶段：
+`study_demo v1.0.0` 的意义不在于功能很多，而在于已经完成了一个清晰的第一阶段：
 
-- CrewAI 多 Agent 流程已经跑通
+- 多 Agent 工作流已经跑通
 - 本地知识读取能力已经接入
 - API 接口已经建立
-- 前端调试页面已经可用
-- 日志与 trace 能力已经补齐基础形态
+- 失败策略已经落地
+- 测试和固定测试集已经建立
+- 版本化机制已经补上基础形态
 
 如果用一句话总结当前进度：
 

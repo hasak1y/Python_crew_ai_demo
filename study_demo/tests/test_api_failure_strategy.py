@@ -34,6 +34,7 @@ class ApiFailureStrategyTests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["status"], "error")
         self.assertEqual(payload["error_code"], "PLANNER_FAILED")
+        self.assertEqual(payload["version_info"]["workflow_version"], "workflow-v1.1.0")
 
     def test_api_exposes_degraded_success_fields(self) -> None:
         """降级成功不能和标准成功混在一起，对外必须显式暴露 degraded 和 quality_flags。"""
@@ -46,6 +47,16 @@ class ApiFailureStrategyTests(unittest.TestCase):
                 "duration_ms": 12,
                 "degraded": True,
                 "quality_flags": ["reviewer_fallback"],
+                "version_info": {
+                    "workflow_version": "workflow-v1.1.0",
+                    "prompt_version": "prompt-v1.1.0",
+                    "agents_config_version": "agents-v1.1.0",
+                    "tasks_config_version": "tasks-v1.1.0",
+                    "model_config_version": "model-v1.0.0",
+                    "tool_version": "tool-v1.1.0",
+                    "schema_version": "schema-v1.1.0",
+                    "model_name": "deepseek-chat",
+                },
                 "trace_summary": None,
             }
 
@@ -57,6 +68,7 @@ class ApiFailureStrategyTests(unittest.TestCase):
         self.assertEqual(payload["status"], "success")
         self.assertTrue(payload["degraded"])
         self.assertEqual(payload["quality_flags"], ["reviewer_fallback"])
+        self.assertEqual(payload["version_info"]["schema_version"], "schema-v1.1.0")
 
     def test_api_rejects_empty_topic_at_entry(self) -> None:
         """空 topic 属于入口非法请求，应该在进入主流程前就被拒绝。"""

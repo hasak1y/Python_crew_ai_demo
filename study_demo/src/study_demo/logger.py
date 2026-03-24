@@ -19,6 +19,7 @@ from crewai.events.types.tool_usage_events import (
     ToolUsageErrorEvent,
     ToolUsageFinishedEvent,
 )
+from study_demo.versioning import get_runtime_versions
 
 REQUEST_ID_CONTEXT: ContextVar[str | None] = ContextVar(
     "study_demo_request_id",
@@ -113,6 +114,7 @@ class CrewStepLogger:
             "code": code,
             "message": message,
             "severity": severity,
+            "version_info": get_runtime_versions(),
         }
 
         with _REQUEST_STATE_LOCK:
@@ -137,6 +139,7 @@ class CrewStepLogger:
             "tool_names": [],
             "tool_calls_count": 0,
             "llm_model": os.getenv("OPENAI_MODEL_NAME", "deepseek-chat"),
+            "version_info": get_runtime_versions(),
         }
 
     def _append_tool(self, task_id: str, tool_name: str) -> None:
@@ -184,6 +187,7 @@ class CrewStepLogger:
             "tool_names": state["tool_names"],
             "step_output_preview": output_preview,
             "llm_model": state["llm_model"],
+            "version_info": state["version_info"],
             "success": success,
         }
 

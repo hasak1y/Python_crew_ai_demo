@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from study_demo.schemas import AnalyzeRequest, AnalyzeResponse, ErrorResponse
 from study_demo.service import ServiceError, analyze_topic_service
+from study_demo.versioning import get_runtime_versions
 
 # 启动接口时主动加载 .env，避免依赖外部手工注入环境变量。
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
@@ -334,7 +335,11 @@ def index() -> str:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "ui": "schema-v1"}
+    return {
+        "status": "ok",
+        "ui": "schema-v1",
+        "version_info": get_runtime_versions(),
+    }
 
 
 @app.post(
@@ -361,6 +366,7 @@ def analyze(req: AnalyzeRequest):
                 status="error",
                 error_code="BAD_REQUEST",
                 message=str(exc),
+                version_info=get_runtime_versions(),
             ).model_dump(),
         )
     except ServiceError as exc:
@@ -371,6 +377,7 @@ def analyze(req: AnalyzeRequest):
                 status="error",
                 error_code=exc.error_code,
                 message=exc.message,
+                version_info=get_runtime_versions(),
             ).model_dump(),
         )
     except Exception:
@@ -381,5 +388,6 @@ def analyze(req: AnalyzeRequest):
                 status="error",
                 error_code="INTERNAL_ERROR",
                 message="服务内部错误，请稍后重试",
+                version_info=get_runtime_versions(),
             ).model_dump(),
         )

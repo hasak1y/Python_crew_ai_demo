@@ -57,6 +57,7 @@ class ServiceFailureStrategyTests(unittest.TestCase):
         self.assertEqual(response["degraded"], case["expected_degraded"])
         self.assertEqual(response["quality_flags"], case["expected_quality_flags"])
         self.assertEqual(response["final_answer"], "reviewed result")
+        self.assertEqual(response["version_info"]["schema_version"], "schema-v1.1.0")
 
     def test_service_adds_quality_flag_into_trace_when_include_trace_enabled(self) -> None:
         """降级成功不仅要体现在字段里，也要能在 trace 里看见证据。"""
@@ -80,9 +81,11 @@ class ServiceFailureStrategyTests(unittest.TestCase):
 
         self.assertEqual(response["quality_flags"], ["tool_not_used"])
         self.assertIsInstance(response["trace_summary"], list)
+        self.assertEqual(response["trace_summary"][0]["task_name"], "version_info")
         self.assertTrue(
             any("expected local knowledge tools" in item["output_preview"] for item in response["trace_summary"])
         )
+        self.assertEqual(response["version_info"]["workflow_version"], "workflow-v1.1.0")
 
     def test_service_falls_back_to_researcher_when_reviewer_fails(self) -> None:
         """reviewer 属于软依赖，失败后应优先回退 researcher 已产出的结果。"""

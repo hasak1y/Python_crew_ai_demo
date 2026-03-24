@@ -15,6 +15,7 @@ from study_demo.logger import (
     set_request_id,
 )
 from study_demo.main import analyze_topic
+from study_demo.versioning import get_runtime_versions
 
 LOG_PATH = Path(__file__).resolve().parents[2] / "logs" / "crew_steps.jsonl"
 
@@ -75,7 +76,23 @@ def _read_log_records_from(start_line: int, request_id: str | None = None) -> li
 
 
 def _build_trace_summary(records: list[dict]) -> list[dict]:
-    summary: list[dict] = []
+    version_info = get_runtime_versions()
+    summary: list[dict] = [
+        {
+            "agent_name": "system",
+            "task_name": "version_info",
+            "success": True,
+            "duration_ms": 0,
+            "output_preview": (
+                f"workflow={version_info['workflow_version']}, "
+                f"prompt={version_info['prompt_version']}, "
+                f"model_config={version_info['model_config_version']}, "
+                f"tool={version_info['tool_version']}, "
+                f"schema={version_info['schema_version']}, "
+                f"model_name={version_info['model_name']}"
+            ),
+        }
+    ]
     for item in records:
         record_type = item.get("record_type", "task")
 
@@ -155,6 +172,7 @@ def _build_success_response(
         "duration_ms": duration_ms,
         "degraded": degraded,
         "quality_flags": quality_flags or None,
+        "version_info": get_runtime_versions(),
         "trace_summary": None,
     }
 
